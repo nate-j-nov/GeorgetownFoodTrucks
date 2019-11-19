@@ -27,10 +27,8 @@ namespace FoodTrucksApp
             PrintFoodTruckSiteNumberTESTFUNCTION();
         }
 
-        /// <summary>
-        /// Extracts data from the foodtruck lottery pdf found online. 
-        /// </summary>
-        /// <param name="file"></param>
+        
+        //Extracts data from the foodtruck lottery pdf found online. 
         protected void GetDataFromPDF(string file)
         {
             PdfReader pdfReader = new PdfReader(file);
