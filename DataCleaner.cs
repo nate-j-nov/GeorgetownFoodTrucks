@@ -14,21 +14,27 @@ namespace FoodTrucksApp
     {
         // Member declarations
         public string TotalText { get; set; }
-        public string[] DividedText { get; set; }
+        public List<string> DividedText = new List<string>();
         public List<FoodTruck> FoodTruckList = new List<FoodTruck>();
+        private string _patternSiteNumber = @"VSP-\d{5}";
+        private string _patternBusinessName = @"(VSP-\d{5})(.*?)(Noma|OFF|Patriots Plaza|Georgetown|Virginia Ave (State Dept)|Union Station|Farragut Square 17th St|L'Enfant Plaza|Waterfront Metro|Navy Yard/Captial River Front|Metro Center|Franklin Square)";
 
         //Constructors
         public DataCleaner() { }
         public DataCleaner(string filePath)
         {
             GetDataFromPDF(filePath);
-            CreateArrayOfStrings(TotalText);
+            CreateArrayOfStrings();
+            //PrintDividedText();
             SetSitePermitNumber();
-            PrintFoodTruckSiteNumberTESTFUNCTION();
+           // SetBusinessName();
+            //PrintFoodTruckSNAndNameTESTFUNCTION();
         }
 
-        
-        //Extracts data from the foodtruck lottery pdf found online. 
+        /// <summary>
+        /// Extracts data from the foodtruck lottery pdf found online. 
+        /// </summary>
+        /// <param name="file"></param>
         protected void GetDataFromPDF(string file)
         {
             PdfReader pdfReader = new PdfReader(file);
@@ -41,57 +47,123 @@ namespace FoodTrucksApp
             }
         }
 
-        //Prints the data
-        protected void PrintData(string pdfData)
-        {
-            Console.WriteLine(pdfData);
-        }
-
         // Separates text into an array of lines, each to represent one food truck. 
-        protected void CreateArrayOfStrings(string text)
+        protected void CreateArrayOfStrings()
         {
-            DividedText = TotalText.Split(new[] { "\n" }, StringSplitOptions.None);
+            string[] tempDividedText = TotalText.Split(new[] { "\n" }, StringSplitOptions.None);
+            string patternIfMultipleLines = @"VSP-\d{5}\s+(Noma|OFF|Patriots Plaza|Georgetown|Virginia Ave (State Dept)|Union Station|Farragut Square 17th St|L'Enfant Plaza|Waterfront Metro|Navy Yard/Captial River Front|Metro Center|Franklin Square)";
+            
+            for (int x = 0; x < tempDividedText.Length; x++) 
+            {
+                Match matchSitePermitNumber = Regex.Match(tempDividedText[x], _patternSiteNumber);
+                Match matchWhenDoubleSpace = Regex.Match(tempDividedText[x], patternIfMultipleLines);
+                if (matchSitePermitNumber.Success)
+                {
+                    if (matchWhenDoubleSpace.Success)
+                    {
+                        tempDividedText[x] = tempDividedText[x].Insert(matchSitePermitNumber.Length, " " + tempDividedText[x - 1]);
+                        
+                        var matchToGetOtherPartOfName = Regex.Match(tempDividedText[x], _patternBusinessName);
+                        tempDividedText[x] = tempDividedText[x].Insert(matchToGetOtherPartOfName.Groups[0].Length + matchToGetOtherPartOfName.Groups[1].Length, tempDividedText[x + 1]);
+                        
+                        // Test to see what value returned from the regex.  
+                        Console.WriteLine("Group 0: {0}", matchToGetOtherPartOfName.Groups[0].ToString());
+                        //Console.WriteLine("Group 1: {1}", matchToGetOtherPartOfName.Groups[1].ToString());
+                        Console.WriteLine();
+                        Console.WriteLine(tempDividedText[x]);
+                    }
+                    DividedText.Add(tempDividedText[x]);
+                }
+            }
         }
 
         protected void PrintDividedText()
         {
             foreach(var s in DividedText)
             {
-                Console.WriteLine(s + Environment.NewLine + "New Element");
+                Console.WriteLine(s);
             }
         }
 
-        protected string GetSitePermitNumber(string lineOfText)
+        protected Match GetSitePermitNumber(string lineOfText)
         {
-            string pattern = @"VSP-\d{5}";
-            Match sitePermitNumber = Regex.Match(lineOfText, pattern);
-            if(sitePermitNumber == null)
+            Match sitePermitNumber = Regex.Match(lineOfText.Replace(" ", String.Empty), _patternSiteNumber);
+            if(sitePermitNumber.Success)
             {
-                return null;
+                return sitePermitNumber;
             }
             else
             {
-                return sitePermitNumber.ToString();
+                return null;
             }
         }
 
+        // Turn Get and Set Permit number into one method. 
         protected void SetSitePermitNumber()
         {
             foreach(var t in DividedText)
             {
-                string sitePermitNumber = GetSitePermitNumber(t);
+                var sitePermitNumber = GetSitePermitNumber(t);
                 if(sitePermitNumber != null)
                 {
-                    FoodTruckList.Add(new FoodTruck(sitePermitNumber));
+                    FoodTruckList.Add(new FoodTruck(sitePermitNumber.ToString()));
                 }
             }
         }
+
+        // Turn get and set business name into one method.
+        // This regex isn't working. It may be useful to do the substring type analysis with stuff like substringStart and substringEnd and getting the stuff in the middle. I think it's
+        // on stack overflow somewhere and shouldn't take terribly long to figure out. once I get it.Maybe I shouldn't be doing the lineOftext.Repalce(" ", String.Empty) but keep playing. 
+        // This shouldn't be terribly difficult to figure out
+        protected Match GetBusinessName(string lineOfText)
+        {                        
+            var businessName = _patternBusinessName.Match(lineOfText);
+            if (businessName.Success)
+            {
+                return businessName;
+            }
+            else
+            {
+                Console.WriteLine("Pattern not matched");
+                return null;
+            }
+        }
+
+        protected void SetBusinessName()
+        {
+            // Need to be sure that every business name goes to the proper number. 
+            for (int x = 0; x < DividedText.Count; x++)
+            {
+                var foodTruckBusinessName = GetBusinessName(DividedText[x]).Groups[1].ToString();
+                
+                try
+                {
+                    FoodTruckList[x].BusinessName = foodTruckBusinessName;
+                }
+                catch(NullReferenceException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+                
+            }
+        }
+
+
 
         protected void PrintFoodTruckSiteNumberTESTFUNCTION()
         {
             foreach(var ft in FoodTruckList)
             {
                 Console.WriteLine(ft.SitePermit.ToString());
+            }
+        }
+
+        protected void PrintFoodTruckSNAndNameTESTFUNCTION()
+        {
+            Console.WriteLine("Site Permit Business Name");
+            foreach(var ft in FoodTruckList)
+            {
+                Console.WriteLine($"{ft.SitePermit}  {ft.BusinessName}");
             }
         }
     }
