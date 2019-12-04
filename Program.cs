@@ -8,7 +8,6 @@ namespace FoodTrucksApp
 {
     class Program
     {
-        
         static void Main(string[] args)
         {
             Console.WriteLine("PDF Extraction");
