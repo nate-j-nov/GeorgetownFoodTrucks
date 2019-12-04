@@ -25,10 +25,10 @@ namespace FoodTrucksApp
         {
             GetDataFromPDF(filePath);
             CreateArrayOfStrings();
-            //PrintDividedText();
+            PrintDividedText();
             SetSitePermitNumber();
-           // SetBusinessName();
-            //PrintFoodTruckSNAndNameTESTFUNCTION();
+            SetBusinessName();
+            PrintFoodTruckSNAndNameTESTFUNCTION();
         }
 
         /// <summary>
@@ -61,18 +61,13 @@ namespace FoodTrucksApp
                 {
                     if (matchWhenDoubleSpace.Success)
                     {
-                        tempDividedText[x] = tempDividedText[x].Insert(matchSitePermitNumber.Length, " " + tempDividedText[x - 1]);
-                        
+                        tempDividedText[x] = tempDividedText[x].Insert(matchSitePermitNumber.Length, tempDividedText[x - 1]);
                         var matchToGetOtherPartOfName = Regex.Match(tempDividedText[x], _patternBusinessName);
-                        tempDividedText[x] = tempDividedText[x].Insert(matchToGetOtherPartOfName.Groups[0].Length + matchToGetOtherPartOfName.Groups[1].Length, tempDividedText[x + 1]);
+                        tempDividedText[x] = tempDividedText[x].Insert(matchSitePermitNumber.Length, " " + tempDividedText[x + 1] + " / ");
                         
-                        // Test to see what value returned from the regex.  
-                        Console.WriteLine("Group 0: {0}", matchToGetOtherPartOfName.Groups[0].ToString());
-                        //Console.WriteLine("Group 1: {1}", matchToGetOtherPartOfName.Groups[1].ToString());
-                        Console.WriteLine();
-                        Console.WriteLine(tempDividedText[x]);
+                        
                     }
-                    DividedText.Add(tempDividedText[x]);
+                    DividedText.Add(tempDividedText[x].Replace(",", ""));
                 }
             }
         }
@@ -117,7 +112,7 @@ namespace FoodTrucksApp
         // This shouldn't be terribly difficult to figure out
         protected Match GetBusinessName(string lineOfText)
         {                        
-            var businessName = _patternBusinessName.Match(lineOfText);
+            var businessName = Regex.Match(lineOfText, _patternBusinessName);
             if (businessName.Success)
             {
                 return businessName;
@@ -134,7 +129,7 @@ namespace FoodTrucksApp
             // Need to be sure that every business name goes to the proper number. 
             for (int x = 0; x < DividedText.Count; x++)
             {
-                var foodTruckBusinessName = GetBusinessName(DividedText[x]).Groups[1].ToString();
+                var foodTruckBusinessName = GetBusinessName(DividedText[x]).Groups[2].ToString();
                 
                 try
                 {
