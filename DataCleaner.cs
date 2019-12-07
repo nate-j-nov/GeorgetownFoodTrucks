@@ -16,8 +16,8 @@ namespace FoodTrucksApp
         public string TotalText { get; set; }
         public List<string> DividedText = new List<string>();
         public List<FoodTruck> FoodTruckList = new List<FoodTruck>();
-        private string _patternSiteNumber = @"VSP-\d{5}";
-        private string _patternBusinessName = @"(VSP-\d{5})(.*?)(Noma|OFF|Patriots Plaza|Georgetown|Virginia Ave (State Dept)|Union Station|Farragut Square 17th St|L'Enfant Plaza|Waterfront Metro|Navy Yard/Captial River Front|Metro Center|Franklin Square)";
+        private string _patternSiteNumber = @"VSP-\d{5}";                                                                                                             
+        private string _patternBusinessName = @"(VSP-\d{5})(.*?)(Noma|OFF|Patriots Plaza|Georgetown|Virginia Ave \(State Dept\)|Union Station|Farragut Square 17th St|L\WEnfant Plaza|Waterfront Metro|Navy Yard/Capital River Front|Metro Center|Franklin Square)";
 
         //Constructors
         public DataCleaner() { }
@@ -25,7 +25,7 @@ namespace FoodTrucksApp
         {
             GetDataFromPDF(filePath);
             CreateArrayOfStrings();
-            PrintDividedText();
+            //PrintDividedText();
             SetSitePermitNumber();
             SetBusinessName();
             PrintFoodTruckSNAndNameTESTFUNCTION();
@@ -51,7 +51,7 @@ namespace FoodTrucksApp
         protected void CreateArrayOfStrings()
         {
             string[] tempDividedText = TotalText.Split(new[] { "\n" }, StringSplitOptions.None);
-            string patternIfMultipleLines = @"VSP-\d{5}\s+(Noma|OFF|Patriots Plaza|Georgetown|Virginia Ave (State Dept)|Union Station|Farragut Square 17th St|L'Enfant Plaza|Waterfront Metro|Navy Yard/Captial River Front|Metro Center|Franklin Square)";
+            string patternIfMultipleLines = @"VSP-\d{5}\s+(Noma|OFF|Patriots Plaza|Georgetown|Virginia Ave\(State Dept\)|Union Station|Farragut Square 17th St|L\WEnfant Plaza|Waterfront Metro|Navy Yard/Capital River Front|Metro Center|Franklin Square)";
             
             for (int x = 0; x < tempDividedText.Length; x++) 
             {
@@ -130,9 +130,14 @@ namespace FoodTrucksApp
             for (int x = 0; x < DividedText.Count; x++)
             {
                 var foodTruckBusinessName = GetBusinessName(DividedText[x]).Groups[2].ToString();
-                
+
                 try
                 {
+                    if (foodTruckBusinessName.Contains("L'Enfant Plaza") || foodTruckBusinessName.Contains("Virginia Ave (State Dept)"))
+                    {
+                        Console.WriteLine("L'Enfant or Virginia Ave found. This is a test");
+                        Console.WriteLine("The corresponding site permit number: {0}" + Environment.NewLine, FoodTruckList[x].SitePermit);
+                    }
                     FoodTruckList[x].BusinessName = foodTruckBusinessName;
                 }
                 catch(NullReferenceException ex)
